@@ -21,6 +21,10 @@ class ChatterBot:
             cursor = self.connection.cursor()
             cursor.execute("SELECT * FROM dataset")
             self.database = cursor.fetchall()
+
+            cursor.execute("SELECT * FROM available_fruits")
+            self.available_fruits = [item[0] for item in cursor.fetchall()]
+
             self.connected = True
 
             questions = self.available_questions()
@@ -42,6 +46,7 @@ class ChatterBot:
                 question = input('شما: ')
                 got_answer = False
                 finished = False
+                fruit_found = False
 
                 if fruit is not None and cost is not None:
                     self.list.append([fruit, cost])
@@ -53,7 +58,9 @@ class ChatterBot:
                     finished = True
 
                 if context == 'fruit':
-                    fruit = question
+                    if self.find_fruit_from_sentence(question) is not None:
+                        fruit_found = True
+                        fruit = self.find_fruit_from_sentence(question)
 
                 if context == 'cost':
                     cost = question
@@ -63,23 +70,29 @@ class ChatterBot:
                 indices = self.doc_matrix.check_similarity(question)
                 for index in indices:
                     # database[index][4] is context
-                    if self.database[index][4] == context:
+                    if self.database[index][3] == context:
                         # database[index][2] is answer
                         answers_list.append(self.database[index][2])
                         # database[index][3] is next context
-                        new_context = self.database[index][3]
+                        new_context = self.database[index][4]
 
                 if len(answers_list) > 0:
                     got_answer = True
                     context = new_context
-                    print('بات: ', random_answer(answers_list))
+                    print('بات:', random_answer(answers_list))
 
                 if finished:
-                    print('لیست شما: ', self.list)
+                    print('لیست شما:', self.list)
                     break
 
                 if not got_answer:
-                    print('بات: نمیدونم چی بگم')
+                    if context == 'fruit' and not fruit_found:
+                        print('این میوه رو نداریم.')
+                    else:
+                        print('بات: نمیدونم چی بگم')
+
+        else:
+            print("بات متصل نیست!")
 
     def available_questions(self):
 
@@ -89,3 +102,10 @@ class ChatterBot:
             questions.append(element[1])
 
         return questions
+
+    def find_fruit_from_sentence(self, sentence):
+        split_sentence = sentence.split()
+
+        for word in split_sentence:
+            if self.available_fruits.__contains__(word):
+                return word
