@@ -21,6 +21,7 @@ class DocTermMatrix:
         maximum = numpy.amax(similarities)
 
         if maximum > 0:
+            # numpy.where[0] is index
             proper_answers = numpy.where(similarities == maximum)[0]
 
         return proper_answers

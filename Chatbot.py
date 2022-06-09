@@ -4,19 +4,35 @@ import random
 from doc_term_matrix import DocTermMatrix
 
 
+# Input array is possible answers
 def random_answer(array):
     random_number = random.randint(0, len(array) - 1)
     return array[random_number]
 
 
 class ChatterBot:
+    # Connection to database
     connection = mysql.connector.connect(host='localhost',
                                          database='chatbot-dataset',
                                          user='root',
                                          password='hourshid2001')
+    # Bought fruits
     list = []
 
-    def __init__(self):
+    # tk is for graphic
+    def __init__(self, tk):
+
+        self.tk = tk
+
+        self.weight = None
+        self.fruit = None
+        self.new_context = "none"
+        self.context = "none"
+
+        # Input for question
+        self.entry = self.tk.Entry()
+        self.entry.pack()
+
         if self.connection.is_connected():
             cursor = self.connection.cursor()
             cursor.execute("SELECT * FROM dataset")
@@ -36,63 +52,66 @@ class ChatterBot:
 
         if self.connected:
 
-            context = "none"
-            new_context = "none"
-            fruit = None
-            cost = None
+            question = self.entry.get()
 
-            while True:
+            label = self.tk.Label(text='شما: ' + question)
+            label.pack()
 
-                question = input('شما: ')
-                got_answer = False
-                finished = False
-                fruit_found = False
+            got_answer = False
+            finished = False
+            fruit_found = False
 
-                if fruit is not None and cost is not None:
-                    self.list.append([fruit, cost])
-                    fruit = None
-                    cost = None
+            if self.fruit is not None and self.weight is not None:
+                self.list.append([self.fruit, self.weight])
+                self.fruit = None
+                self.weight = None
 
-                if self.doc_matrix.check_similarity_with_another_text(question, 'خداحافظ'):
-                    context = 'bye'
-                    finished = True
+            # Finish
+            if self.doc_matrix.check_similarity_with_another_text(question, 'خداحافظ'):
+                self.context = 'bye'
+                finished = True
 
-                if context == 'fruit':
-                    if self.find_fruit_from_sentence(question) is not None:
-                        fruit_found = True
-                        fruit = self.find_fruit_from_sentence(question)
+            if self.context == 'fruit':
+                if self.find_fruit_from_sentence(question) is not None:
+                    fruit_found = True
+                    self.fruit = self.find_fruit_from_sentence(question)
 
-                if context == 'cost':
-                    cost = question
+            if self.context == 'cost':
+                self.weight = question
 
-                answers_list = []
+            answers_list = []
 
-                indices = self.doc_matrix.check_similarity(question)
-                for index in indices:
-                    # database[index][4] is context
-                    if self.database[index][3] == context:
-                        # database[index][2] is answer
-                        answers_list.append(self.database[index][2])
-                        # database[index][3] is next context
-                        new_context = self.database[index][4]
+            indices = self.doc_matrix.check_similarity(question)
+            for index in indices:
+                # database[index][3] is context
+                if self.database[index][3] == self.context:
+                    # database[index][2] is answer
+                    answers_list.append(self.database[index][2])
+                    # database[index][4] is next context
+                    self.new_context = self.database[index][4]
 
-                if len(answers_list) > 0:
-                    got_answer = True
-                    context = new_context
-                    print('بات:', random_answer(answers_list))
+            if len(answers_list) > 0:
+                got_answer = True
+                self.context = self.new_context
+                label = self.tk.Label(text='بات: ' + random_answer(answers_list))
+                label.pack()
 
-                if finished:
-                    print('لیست شما:', self.list)
-                    break
+            if finished:
+                label = self.tk.Label(text='لیست شما: ' + str(self.list))
+                label.pack()
 
-                if not got_answer:
-                    if context == 'fruit' and not fruit_found:
-                        print('این میوه رو نداریم.')
-                    else:
-                        print('بات: نمیدونم چی بگم')
+            if not got_answer:
+                if self.context == 'fruit' and not fruit_found:
+                    label = self.tk.Label(text='بات: این میوه رو نداریم')
+                    label.pack()
+                else:
+                    label = self.tk.Label(text='بات: نمیدونم چی بگم')
+                    label.pack()
 
+            self.entry.delete(0, self.tk.END)
         else:
-            print("بات متصل نیست!")
+            label = self.tk.Label(text='بات متصل نیست!')
+            label.pack()
 
     def available_questions(self):
 
