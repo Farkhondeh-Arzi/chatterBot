@@ -20,9 +20,10 @@ class ChatterBot:
     list = []
 
     # tk is for graphic
-    def __init__(self, tk):
+    def __init__(self, tk, scroll_list):
 
         self.tk = tk
+        self.scroll_list = scroll_list
 
         self.weight = None
         self.fruit = None
@@ -30,8 +31,8 @@ class ChatterBot:
         self.context = "none"
 
         # Input for question
-        self.entry = self.tk.Entry()
-        self.entry.pack()
+        self.entry = self.tk.Entry(justify='right', bg='#a8a8a8', width=100)
+        self.entry.pack(side=tk.BOTTOM)
 
         if self.connection.is_connected():
             cursor = self.connection.cursor()
@@ -54,8 +55,7 @@ class ChatterBot:
 
             question = self.entry.get()
 
-            label = self.tk.Label(text='شما: ' + question)
-            label.pack()
+            self.scroll_list.insert(self.tk.END, 'شما: ' + question)
 
             got_answer = False
             finished = False
@@ -93,25 +93,20 @@ class ChatterBot:
             if len(answers_list) > 0:
                 got_answer = True
                 self.context = self.new_context
-                label = self.tk.Label(text='بات: ' + random_answer(answers_list))
-                label.pack()
+                self.scroll_list.insert(self.tk.END, 'بات: ' + random_answer(answers_list))
 
             if finished:
-                label = self.tk.Label(text='لیست شما: ' + str(self.list))
-                label.pack()
+                self.scroll_list.insert(self.tk.END, 'لیست شما: ' + str(self.list))
 
             if not got_answer:
                 if self.context == 'fruit' and not fruit_found:
-                    label = self.tk.Label(text='بات: این میوه رو نداریم')
-                    label.pack()
+                    self.scroll_list.insert(self.tk.END, 'بات: این میوه رو نداریم')
                 else:
-                    label = self.tk.Label(text='بات: نمیدونم چی بگم')
-                    label.pack()
+                    self.scroll_list.insert(self.tk.END, 'بات: نمیدونم چی بگم')
 
             self.entry.delete(0, self.tk.END)
         else:
-            label = self.tk.Label(text='بات متصل نیست!')
-            label.pack()
+            self.scroll_list.insert(self.tk.END, 'بات متصل نیست!')
 
     def available_questions(self):
 
